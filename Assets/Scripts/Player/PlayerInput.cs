@@ -8,12 +8,15 @@ public class PlayerInput : MonoBehaviour
     [SerializeField] private CinemachineCamera cinemachineCamera;
     [SerializeField] private float keyboardPanSpeed = 5f;
     [SerializeField] private float zoomSpeed = 1f;
+    [SerializeField] private float rotationSpeed = 1f;
     [SerializeField] private float minZoomDistance = 7.5f;
 
     private CinemachineFollow cinemachineFollow;
     // This is used to determine the furthest the camera can zoom out.
     private Vector3 startingFollowOffset;
     private float zoomStartTime;
+    private float rotationStartTime;
+    private float maxRotationAmount;
 
     private void Awake()
     {
@@ -24,12 +27,41 @@ public class PlayerInput : MonoBehaviour
         }
 
         startingFollowOffset = cinemachineFollow.FollowOffset;
+        maxRotationAmount = Mathf.Abs(cinemachineFollow.FollowOffset.z);
     }
 
     void Update()
     {
         HandlePanning();
         HandleZooming();
+        HandleRotating();
+    }
+
+    private void HandlePanning()
+    {
+        Vector2 moveAmount = Vector2.zero;
+        // TODO: There's gotta be a better way. Is there a device-independent way to get input?
+        if (Keyboard.current.upArrowKey.isPressed)
+        {
+            moveAmount.y += keyboardPanSpeed;
+        }
+        if (Keyboard.current.downArrowKey.isPressed)
+        {
+            moveAmount.y -= keyboardPanSpeed;
+        }
+        if (Keyboard.current.rightArrowKey.isPressed)
+        {
+            moveAmount.x += keyboardPanSpeed;
+        }
+        if (Keyboard.current.leftArrowKey.isPressed)
+        {
+            moveAmount.x -= keyboardPanSpeed;
+        }
+
+        if (moveAmount != Vector2.zero)
+        {
+            cameraTarget.position += new Vector3(moveAmount.x, 0f, moveAmount.y) * Time.deltaTime;
+        }
     }
 
     private void HandleZooming()
@@ -73,30 +105,49 @@ public class PlayerInput : MonoBehaviour
     private static bool ShouldSetZoomStartTime() => Keyboard.current.endKey.wasPressedThisFrame
         || Keyboard.current.endKey.wasReleasedThisFrame;
 
-    private void HandlePanning()
+    private void HandleRotating()
     {
-        Vector2 moveAmount = Vector2.zero;
-        // TODO: There's gotta be a better way. Is there a device-independent way to get input?
-        if (Keyboard.current.upArrowKey.isPressed)
+        if (ShouldSetRotationStartTime())
         {
-            moveAmount.y += keyboardPanSpeed;
-        }
-        if (Keyboard.current.downArrowKey.isPressed)
-        {
-            moveAmount.y -= keyboardPanSpeed;
-        }
-        if (Keyboard.current.rightArrowKey.isPressed)
-        {
-            moveAmount.x += keyboardPanSpeed;
-        }
-        if (Keyboard.current.leftArrowKey.isPressed)
-        {
-            moveAmount.x -= keyboardPanSpeed;
+            rotationStartTime = Time.time;
         }
 
-        if (moveAmount != Vector2.zero)
+        float rotationTime = Mathf.Clamp01((Time.time - rotationStartTime) * rotationSpeed);
+        Vector3 targetFollowOffset;
+        if (Keyboard.current.pageDownKey.isPressed)
         {
-            cameraTarget.position += new Vector3(moveAmount.x, 0f, moveAmount.y) * Time.deltaTime;
+            targetFollowOffset = new Vector3(
+                maxRotationAmount,
+                cinemachineFollow.FollowOffset.y,
+                0f
+            );
         }
+        else if (Keyboard.current.pageUpKey.isPressed)
+        {
+            targetFollowOffset = new Vector3(
+                -maxRotationAmount,
+                cinemachineFollow.FollowOffset.y,
+                0f
+            );
+        }
+        else
+        {
+            targetFollowOffset = new Vector3(
+                startingFollowOffset.x,
+                cinemachineFollow.FollowOffset.y,
+                startingFollowOffset.z
+            );
+        }
+
+        cinemachineFollow.FollowOffset = Vector3.Slerp(
+            cinemachineFollow.FollowOffset,
+            targetFollowOffset,
+            rotationTime
+        );
     }
+
+    private static bool ShouldSetRotationStartTime() => Keyboard.current.pageUpKey.wasPressedThisFrame
+        || Keyboard.current.pageDownKey.wasPressedThisFrame
+        || Keyboard.current.pageUpKey.wasReleasedThisFrame
+        || Keyboard.current.pageDownKey.wasReleasedThisFrame;
 }
