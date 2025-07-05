@@ -4050,7 +4050,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraTarget: {fileID: 1490877731}
+  cinemachineCamera: {fileID: 1111542238}
   keyboardPanSpeed: 15
+  zoomSpeed: 1
+  minZoomDistance: 7.5
 --- !u!1001 &332197402
 PrefabInstance:
   m_ObjectHideFlags: 0
