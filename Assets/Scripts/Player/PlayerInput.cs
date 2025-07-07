@@ -6,7 +6,7 @@ namespace RTS.Player
 {
     public class PlayerInput : MonoBehaviour
     {
-        [SerializeField] private Transform cameraTarget;
+        [SerializeField] private Rigidbody cameraTarget;
         [SerializeField] private CinemachineCamera cinemachineCamera;
         [SerializeField] private CameraConfig cameraConfig;
 
@@ -41,10 +41,7 @@ namespace RTS.Player
             Vector2 moveAmount = GetKeyboardMoveAmount();
             moveAmount += GetMouseMoveAmount();
 
-            if (moveAmount != Vector2.zero)
-            {
-                cameraTarget.position += new Vector3(moveAmount.x, 0f, moveAmount.y) * Time.deltaTime;
-            }
+            cameraTarget.linearVelocity = new Vector3(moveAmount.x, 0f, moveAmount.y);
         }
 
         private Vector2 GetKeyboardMoveAmount()
@@ -80,6 +77,7 @@ namespace RTS.Player
             Vector2 mousePosition = Mouse.current.position.ReadValue();
             Vector2 screenDimensions = new Vector2(Screen.width, Screen.height);
 
+            // X-Axis Edge Panning
             if (mousePosition.x <= cameraConfig.EdgePanSize)
             {
                 moveAmount.x -= cameraConfig.MousePanSpeed;
@@ -89,13 +87,14 @@ namespace RTS.Player
                 moveAmount.x += cameraConfig.MousePanSpeed;
             }
 
-            if (mousePosition.y >= screenDimensions.y - cameraConfig.EdgePanSize)
-            {
-                moveAmount.y += cameraConfig.MousePanSpeed;
-            }
+            // Y-Axis Edge Panning
             if (mousePosition.y <= cameraConfig.EdgePanSize)
             {
                 moveAmount.y -= cameraConfig.MousePanSpeed;
+            }
+            else if (mousePosition.y >= screenDimensions.y - cameraConfig.EdgePanSize)
+            {
+                moveAmount.y += cameraConfig.MousePanSpeed;
             }
 
             return moveAmount;
