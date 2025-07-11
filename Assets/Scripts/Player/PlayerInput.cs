@@ -1,3 +1,5 @@
+using RTS.Units;
+using System;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,6 +10,8 @@ namespace RTS.Player
     {
         [SerializeField] private Rigidbody cameraTarget;
         [SerializeField] private CinemachineCamera cinemachineCamera;
+        // The inherited member that we're hiding here is planned to be deprecated in the future.
+        [SerializeField] private new Camera camera;
         [SerializeField] private CameraConfig cameraConfig;
 
         private CinemachineFollow cinemachineFollow;
@@ -16,6 +20,7 @@ namespace RTS.Player
         private float zoomStartTime;
         private float rotationStartTime;
         private float maxRotationAmount;
+        private ISelectable selectedUnit;
 
         private void Awake()
         {
@@ -34,6 +39,29 @@ namespace RTS.Player
             HandlePanning();
             HandleZooming();
             HandleRotating();
+            HandleLeftClick();
+        }
+
+        private void HandleLeftClick()
+        {
+            if(camera == null) { return; }
+
+            Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                if (selectedUnit != null)
+                {
+                    selectedUnit.Deselect();
+                    selectedUnit = null;
+                }
+
+                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Default"))
+                && hit.collider.TryGetComponent(out ISelectable selectable))
+                {
+                    selectable.Select();
+                    selectedUnit = selectable;
+                }
+            }
         }
 
         private void HandlePanning()
