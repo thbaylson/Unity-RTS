@@ -3,6 +3,7 @@ using System;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace RTS.Player
 {
@@ -15,6 +16,9 @@ namespace RTS.Player
         [SerializeField] private CameraConfig cameraConfig;
         [SerializeField] private LayerMask selectableUnitsLayers;
         [SerializeField] private LayerMask floorLayers;
+        [SerializeField] private RectTransform dragSelectBox;
+
+        private Vector2 startingMousePosition;
 
         private CinemachineFollow cinemachineFollow;
         // This is used to determine the furthest the camera can zoom out.
@@ -43,6 +47,51 @@ namespace RTS.Player
             HandleRotating();
             HandleLeftClick();
             HandleRightClick();
+            HandleDragSelect();
+        }
+
+        private void HandleDragSelect()
+        {
+            if (dragSelectBox == null) { Debug.LogError("Drag Select Box is not assigned in PlayerInput."); return; }
+
+            // Drag Started
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                dragSelectBox.gameObject.SetActive(true);
+                startingMousePosition = Mouse.current.position.ReadValue();
+
+                // Note: This works because we anchored the Image to the bottom left of the screen.
+                dragSelectBox.transform.position = startingMousePosition;
+            }
+            // Dragging
+            else if (Mouse.current.leftButton.isPressed && !Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                ResizeSelectionBox();
+            }
+            // Drag Ended
+            else if (Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                // Deselect units
+                if (selectedUnit != null)
+                {
+                    selectedUnit.Deselect();
+                    selectedUnit = null;
+                }
+
+                dragSelectBox.gameObject.SetActive(false);
+            }
+        }
+
+        private void ResizeSelectionBox()
+        {
+            Vector2 currentMousePosition = Mouse.current.position.ReadValue();
+            Vector2 dragBoxSize = currentMousePosition - startingMousePosition;
+
+            // We use Mathf.Abs to ensure the size is always positive, regardless of drag direction.
+            dragSelectBox.sizeDelta = new Vector2(Mathf.Abs(dragBoxSize.x), Mathf.Abs(dragBoxSize.y));
+            // We use anchoredPosition because this is a UI element. This is essentially like transform.position.
+            // The reason we half the size is because the pivot point defaults to the center of the RectTransform.
+            dragSelectBox.anchoredPosition = startingMousePosition + dragBoxSize / 2f;
         }
 
         private void HandleRightClick()
@@ -63,7 +112,7 @@ namespace RTS.Player
 
         private void HandleLeftClick()
         {
-            if(camera == null) { return; }
+            if (camera == null) { Debug.LogError("Camera is not assigned in PlayerInput."); return; }
 
             if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
@@ -128,7 +177,7 @@ namespace RTS.Player
             if (mousePosition.x <= cameraConfig.EdgePanSize)
             {
                 moveAmount.x -= cameraConfig.MousePanSpeed;
-            }            
+            }
             else if (mousePosition.x >= screenDimensions.x - cameraConfig.EdgePanSize)
             {
                 moveAmount.x += cameraConfig.MousePanSpeed;
