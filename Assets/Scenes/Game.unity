@@ -4093,6 +4093,9 @@ MonoBehaviour:
     <MousePanSpeed>k__BackingField: 5
     <ZoomSpeed>k__BackingField: 1
     <MinZoomDistance>k__BackingField: 7.5
+  selectableUnitsLayers:
+    serializedVersion: 2
+    m_Bits: 192
 --- !u!1001 &332197402
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25049,7 +25052,7 @@ Terrain:
   m_ScaleInLightmap: 0.0256
   m_LightmapParameters: {fileID: 15203, guid: 0000000000000000f000000000000000, type: 0}
   m_GroupingID: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 4294967295
   m_AllowAutoConnect: 1
   m_EnableHeightmapRayTracing: 1
   m_EnableTreesAndDetailsRayTracing: 0

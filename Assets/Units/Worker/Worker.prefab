@@ -51,7 +51,7 @@ MonoBehaviour:
   m_EndAngleFade: 180
   m_UVScale: {x: 1, y: 1}
   m_UVBias: {x: 0, y: 0}
-  m_DecalLayerMask: 1
+  m_DecalLayerMask: 2
   m_ScaleMode: 0
   m_Offset: {x: 0, y: 0, z: 4}
   m_Size: {x: 1.5, y: 1.5, z: 8}
@@ -69,7 +69,7 @@ GameObject:
   - component: {fileID: 5208982857545203475}
   - component: {fileID: 9045964101540693468}
   - component: {fileID: 445423763944725040}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Worker
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -13,6 +13,7 @@ namespace RTS.Player
         // The inherited member that we're hiding here is planned to be deprecated in the future.
         [SerializeField] private new Camera camera;
         [SerializeField] private CameraConfig cameraConfig;
+        [SerializeField] private LayerMask selectableUnitsLayers;
 
         private CinemachineFollow cinemachineFollow;
         // This is used to determine the furthest the camera can zoom out.
@@ -55,7 +56,7 @@ namespace RTS.Player
                     selectedUnit = null;
                 }
 
-                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, LayerMask.GetMask("Default"))
+                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
                 && hit.collider.TryGetComponent(out ISelectable selectable))
                 {
                     selectable.Select();
