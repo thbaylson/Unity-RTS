@@ -1,3 +1,5 @@
+using RTS.EventBus;
+using RTS.Events;
 using RTS.Units;
 using System;
 using Unity.Cinemachine;
@@ -38,6 +40,24 @@ namespace RTS.Player
 
             startingFollowOffset = cinemachineFollow.FollowOffset;
             maxRotationAmount = Mathf.Abs(cinemachineFollow.FollowOffset.z);
+
+            Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
+        }
+
+        // Always unsubscribe from events to prevent memory leaks.
+        private void OnDestroy()
+        {
+            Bus<UnitSelectedEvent>.OnEvent -= HandleUnitSelected;
+        }
+
+        private void HandleUnitSelected(UnitSelectedEvent evt)
+        {
+            if (selectedUnit != null)
+            {
+                selectedUnit.Deselect();
+            }
+
+            selectedUnit = evt.Unit;
         }
 
         void Update()
@@ -71,12 +91,8 @@ namespace RTS.Player
             // Drag Ended
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
-                // Deselect units
-                if (selectedUnit != null)
-                {
-                    selectedUnit.Deselect();
-                    selectedUnit = null;
-                }
+                // Select all units within the drag box.
+                // Deselect units that are not in the drag box.
 
                 dragSelectBox.gameObject.SetActive(false);
             }
@@ -127,7 +143,6 @@ namespace RTS.Player
                 && hit.collider.TryGetComponent(out ISelectable selectable))
                 {
                     selectable.Select();
-                    selectedUnit = selectable;
                 }
             }
         }
