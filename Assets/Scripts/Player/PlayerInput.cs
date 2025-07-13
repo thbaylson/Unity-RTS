@@ -14,6 +14,7 @@ namespace RTS.Player
         [SerializeField] private new Camera camera;
         [SerializeField] private CameraConfig cameraConfig;
         [SerializeField] private LayerMask selectableUnitsLayers;
+        [SerializeField] private LayerMask floorLayers;
 
         private CinemachineFollow cinemachineFollow;
         // This is used to determine the furthest the camera can zoom out.
@@ -41,13 +42,29 @@ namespace RTS.Player
             HandleZooming();
             HandleRotating();
             HandleLeftClick();
+            HandleRightClick();
+        }
+
+        private void HandleRightClick()
+        {
+            // This lets us check if selectedUnit is IMoveable and declare a local variable at the same time.
+            // For more, see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#declaration-and-type-patterns
+            if (selectedUnit == null || selectedUnit is not IMoveable moveable) { return; }
+
+            if (Mouse.current.rightButton.wasReleasedThisFrame)
+            {
+                Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
+                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, floorLayers))
+                {
+                    moveable.MoveTo(hit.point);
+                }
+            }
         }
 
         private void HandleLeftClick()
         {
             if(camera == null) { return; }
 
-            Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
                 if (selectedUnit != null)
@@ -56,6 +73,7 @@ namespace RTS.Player
                     selectedUnit = null;
                 }
 
+                Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
                 if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
                 && hit.collider.TryGetComponent(out ISelectable selectable))
                 {
