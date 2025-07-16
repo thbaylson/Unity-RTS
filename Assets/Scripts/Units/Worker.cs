@@ -18,6 +18,8 @@ namespace RTS.Units
             {
                 decalProjector.gameObject.SetActive(false);
             }
+
+            Bus<UnitDeselectedEvent>.Raise(new(this));
         }
 
         public void MoveTo(Vector3 position)

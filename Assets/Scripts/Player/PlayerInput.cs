@@ -42,6 +42,7 @@ namespace RTS.Player
             maxRotationAmount = Mathf.Abs(cinemachineFollow.FollowOffset.z);
 
             Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
+            Bus<UnitDeselectedEvent>.OnEvent += HandleUnitDeselected;
         }
 
         // Always unsubscribe from events to prevent memory leaks.
@@ -52,12 +53,12 @@ namespace RTS.Player
 
         private void HandleUnitSelected(UnitSelectedEvent evt)
         {
-            if (selectedUnit != null)
-            {
-                selectedUnit.Deselect();
-            }
-
             selectedUnit = evt.Unit;
+        }
+
+        private void HandleUnitDeselected(UnitDeselectedEvent evt)
+        {
+            selectedUnit = null;
         }
 
         void Update()
@@ -135,7 +136,6 @@ namespace RTS.Player
                 if (selectedUnit != null)
                 {
                     selectedUnit.Deselect();
-                    selectedUnit = null;
                 }
 
                 Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
