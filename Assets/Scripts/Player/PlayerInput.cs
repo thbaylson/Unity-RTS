@@ -28,8 +28,12 @@ namespace RTS.Player
         private float rotationStartTime;
         private float maxRotationAmount;
 
+        // Keep track of alive units to be sure we don't select any dead units.
+        // We're using HashSets here because the index/position/order of the units doesn't matter.
         private HashSet<AbstractUnit> aliveUnits = new(100);
+        // addedUnits keeps track of units that are being selected during the drag event.
         private HashSet<AbstractUnit> addedUnits = new(24);
+        // This is the actual list of selected units that we will use for actions, eg: movement.
         private List<ISelectable> selectedUnits = new(12);
 
         private void Awake()
@@ -65,7 +69,6 @@ namespace RTS.Player
             HandlePanning();
             HandleZooming();
             HandleRotating();
-            HandleLeftClick();
             HandleRightClick();
             HandleDragSelect();
         }
@@ -77,46 +80,68 @@ namespace RTS.Player
             // Drag Started
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                dragSelectBox.gameObject.SetActive(true);
-                startingMousePosition = Mouse.current.position.ReadValue();
-                addedUnits.Clear();
-
-                // Note: This works because we anchored the Image to the bottom left of the screen.
-                dragSelectBox.transform.position = startingMousePosition;
+                HandleMouseDown();
             }
             // Dragging
             else if (Mouse.current.leftButton.isPressed && !Mouse.current.leftButton.wasPressedThisFrame)
             {
-                Bounds selectionBoxBounds = ResizeSelectionBox();
-                foreach(AbstractUnit unit in aliveUnits)
-                {
-                    Vector2 unitPosition = camera.WorldToScreenPoint(unit.transform.position);
-                    if (selectionBoxBounds.Contains(unitPosition))
-                    {
-                        addedUnits.Add(unit);
-                    }
-                }
+                HandleMouseDrag();
             }
             // Drag Ended
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
+                HandleMouseUp();
+            }
+        }
+
+        private void HandleMouseDown()
+        {
+            dragSelectBox.sizeDelta = Vector2.zero;
+            dragSelectBox.gameObject.SetActive(true);
+            startingMousePosition = Mouse.current.position.ReadValue();
+            addedUnits.Clear();
+        }
+
+        private void HandleMouseDrag()
+        {
+            // This Bounds object was calculated using the mouse position, so it'll be in screen space.
+            Bounds selectionBoxBounds = ResizeSelectionBox();
+            foreach (AbstractUnit unit in aliveUnits)
+            {
+                Vector2 unitPosition = camera.WorldToScreenPoint(unit.transform.position);
+                if (selectionBoxBounds.Contains(unitPosition))
+                {
+                    addedUnits.Add(unit);
+                }
+            }
+        }
+
+        private void HandleMouseUp()
+        {
+            // This enables shift-clicking to select multiple units.
+            if (!Keyboard.current.shiftKey.isPressed)
+            {
                 // Deselect units that are not in the drag box.
                 DeselectAllUnits();
-
-                // Select all units within the drag box.
-                foreach(AbstractUnit unit in addedUnits)
-                {
-                    unit.Select();
-                }
-
-                dragSelectBox.gameObject.SetActive(false);
             }
+
+            // This will cover cases where the player was not dragging, but just clicked.
+            HandleLeftClick();
+
+            // Select all units within the drag box.
+            foreach (AbstractUnit unit in addedUnits)
+            {
+                unit.Select();
+            }
+
+            dragSelectBox.gameObject.SetActive(false);
         }
 
         private void DeselectAllUnits()
         {
-            ISelectable[] currentSelectables = selectedUnits.ToArray();
-            foreach (ISelectable selectable in currentSelectables)
+            // Remember that Deselect() changes the selectedUnits list and we can't modify it while iterating over it.
+            ISelectable[] currentlySelectedUnits = selectedUnits.ToArray();
+            foreach (ISelectable selectable in currentlySelectedUnits)
             {
                 selectable.Deselect();
             }
@@ -160,21 +185,13 @@ namespace RTS.Player
         {
             if (camera == null) { Debug.LogError("Camera is not assigned in PlayerInput."); return; }
 
-            // This will be fixed in the next lecture!
-            //if (Mouse.current.leftButton.wasReleasedThisFrame)
-            //{
-            //    if (selectedUnits != null)
-            //    {
-            //        selectedUnits.Deselect();
-            //    }
+            Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
 
-            //    Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
-            //    if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
-            //    && hit.collider.TryGetComponent(out ISelectable selectable))
-            //    {
-            //        selectable.Select();
-            //    }
-            //}
+            if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
+                && hit.collider.TryGetComponent(out ISelectable selectable))
+            {
+                selectable.Select();
+            }
         }
 
         private void HandlePanning()
