@@ -1,11 +1,10 @@
 using RTS.EventBus;
 using RTS.Events;
 using RTS.Units;
-using System;
+using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 namespace RTS.Player
 {
@@ -28,7 +27,10 @@ namespace RTS.Player
         private float zoomStartTime;
         private float rotationStartTime;
         private float maxRotationAmount;
-        private ISelectable selectedUnit;
+
+        private HashSet<AbstractUnit> aliveUnits = new(100);
+        private HashSet<AbstractUnit> addedUnits = new(24);
+        private List<ISelectable> selectedUnits = new(12);
 
         private void Awake()
         {
@@ -41,6 +43,7 @@ namespace RTS.Player
             startingFollowOffset = cinemachineFollow.FollowOffset;
             maxRotationAmount = Mathf.Abs(cinemachineFollow.FollowOffset.z);
 
+            Bus<UnitSpawnedEvent>.OnEvent += HandleUnitSpawned;
             Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
             Bus<UnitDeselectedEvent>.OnEvent += HandleUnitDeselected;
         }
@@ -48,18 +51,14 @@ namespace RTS.Player
         // Always unsubscribe from events to prevent memory leaks.
         private void OnDestroy()
         {
+            Bus<UnitDeselectedEvent>.OnEvent -= HandleUnitDeselected;
             Bus<UnitSelectedEvent>.OnEvent -= HandleUnitSelected;
+            Bus<UnitSpawnedEvent>.OnEvent -= HandleUnitSpawned;
         }
 
-        private void HandleUnitSelected(UnitSelectedEvent evt)
-        {
-            selectedUnit = evt.Unit;
-        }
-
-        private void HandleUnitDeselected(UnitDeselectedEvent evt)
-        {
-            selectedUnit = null;
-        }
+        private void HandleUnitSpawned(UnitSpawnedEvent evt) => aliveUnits.Add(evt.Unit);
+        private void HandleUnitSelected(UnitSelectedEvent evt) => selectedUnits.Add(evt.Unit);
+        private void HandleUnitDeselected(UnitDeselectedEvent evt) => selectedUnits.Remove(evt.Unit);
 
         void Update()
         {
@@ -80,6 +79,7 @@ namespace RTS.Player
             {
                 dragSelectBox.gameObject.SetActive(true);
                 startingMousePosition = Mouse.current.position.ReadValue();
+                addedUnits.Clear();
 
                 // Note: This works because we anchored the Image to the bottom left of the screen.
                 dragSelectBox.transform.position = startingMousePosition;
@@ -87,19 +87,42 @@ namespace RTS.Player
             // Dragging
             else if (Mouse.current.leftButton.isPressed && !Mouse.current.leftButton.wasPressedThisFrame)
             {
-                ResizeSelectionBox();
+                Bounds selectionBoxBounds = ResizeSelectionBox();
+                foreach(AbstractUnit unit in aliveUnits)
+                {
+                    Vector2 unitPosition = camera.WorldToScreenPoint(unit.transform.position);
+                    if (selectionBoxBounds.Contains(unitPosition))
+                    {
+                        addedUnits.Add(unit);
+                    }
+                }
             }
             // Drag Ended
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
-                // Select all units within the drag box.
                 // Deselect units that are not in the drag box.
+                DeselectAllUnits();
+
+                // Select all units within the drag box.
+                foreach(AbstractUnit unit in addedUnits)
+                {
+                    unit.Select();
+                }
 
                 dragSelectBox.gameObject.SetActive(false);
             }
         }
 
-        private void ResizeSelectionBox()
+        private void DeselectAllUnits()
+        {
+            ISelectable[] currentSelectables = selectedUnits.ToArray();
+            foreach (ISelectable selectable in currentSelectables)
+            {
+                selectable.Deselect();
+            }
+        }
+
+        private Bounds ResizeSelectionBox()
         {
             Vector2 currentMousePosition = Mouse.current.position.ReadValue();
             Vector2 dragBoxSize = currentMousePosition - startingMousePosition;
@@ -109,20 +132,26 @@ namespace RTS.Player
             // We use anchoredPosition because this is a UI element. This is essentially like transform.position.
             // The reason we half the size is because the pivot point defaults to the center of the RectTransform.
             dragSelectBox.anchoredPosition = startingMousePosition + dragBoxSize / 2f;
+
+            return new Bounds(dragSelectBox.anchoredPosition, dragSelectBox.sizeDelta);
         }
 
         private void HandleRightClick()
         {
-            // This lets us check if selectedUnit is IMoveable and declare a local variable at the same time.
-            // For more, see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/patterns#declaration-and-type-patterns
-            if (selectedUnit == null || selectedUnit is not IMoveable moveable) { return; }
+            if (selectedUnits.Count == 0) { return; }
 
             if (Mouse.current.rightButton.wasReleasedThisFrame)
             {
                 Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
                 if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, floorLayers))
                 {
-                    moveable.MoveTo(hit.point);
+                    foreach(ISelectable selectable in selectedUnits)
+                    {
+                        if(selectable is IMoveable moveable)
+                        {
+                            moveable.MoveTo(hit.point);
+                        }
+                    }                    
                 }
             }
         }
@@ -131,20 +160,21 @@ namespace RTS.Player
         {
             if (camera == null) { Debug.LogError("Camera is not assigned in PlayerInput."); return; }
 
-            if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                if (selectedUnit != null)
-                {
-                    selectedUnit.Deselect();
-                }
+            // This will be fixed in the next lecture!
+            //if (Mouse.current.leftButton.wasReleasedThisFrame)
+            //{
+            //    if (selectedUnits != null)
+            //    {
+            //        selectedUnits.Deselect();
+            //    }
 
-                Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
-                && hit.collider.TryGetComponent(out ISelectable selectable))
-                {
-                    selectable.Select();
-                }
-            }
+            //    Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
+            //    if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
+            //    && hit.collider.TryGetComponent(out ISelectable selectable))
+            //    {
+            //        selectable.Select();
+            //    }
+            //}
         }
 
         private void HandlePanning()
