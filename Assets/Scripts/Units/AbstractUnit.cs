@@ -10,6 +10,7 @@ namespace RTS.Units
     public abstract class AbstractUnit : MonoBehaviour, ISelectable, IMoveable
     {
         [SerializeField] private DecalProjector decalProjector;
+        public float AgentRadius => agent.radius;
         private NavMeshAgent agent;
 
         private void Awake()

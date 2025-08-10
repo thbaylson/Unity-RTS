@@ -170,13 +170,61 @@ namespace RTS.Player
                 Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
                 if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, floorLayers))
                 {
+                    // When we have multiple units moving to the same location, we need to prevent
+                    // the units from bumping into each other and pushing each other around, ie "Unit Dancing."
+                    // To do this, we're going to make concentric rings with radi based on how many units
+                    // need to be placed. We'll use degrees on the Unit Circle to figure out how to equally space 
+                    // the units on a given layer.
+                    List<AbstractUnit> abstractUnits = new(selectedUnits.Count);
                     foreach(ISelectable selectable in selectedUnits)
                     {
-                        if(selectable is IMoveable moveable)
+                        if(selectable is AbstractUnit unit)
                         {
-                            moveable.MoveTo(hit.point);
+                            abstractUnits.Add(unit);
                         }
-                    }                    
+                    }
+
+                    int unitsOnLayer = 0;
+                    int maxUnitsOnLayer = 1;
+                    float circleRadius = 0f;
+                    float radialOffset = 0f;
+
+                    foreach(AbstractUnit unit in abstractUnits)
+                    {
+                        // Find where the unit should be on its layer of the concentric circles.
+                        Vector3 targetPosition = new(
+                            hit.point.x + circleRadius * Mathf.Cos(radialOffset * unitsOnLayer),
+                            hit.point.y,
+                            hit.point.z + circleRadius * Mathf.Sin(radialOffset * unitsOnLayer)
+                        );
+
+                        unit.MoveTo(targetPosition);
+                        unitsOnLayer++;
+
+                        if(unitsOnLayer > maxUnitsOnLayer)
+                        {
+                            // Once we fill up a layer, calculate the next layer's radius and reset the count.
+                            circleRadius += unit.AgentRadius * 3.5f;// TODO: Make this layer spacing offset a variable.
+                            unitsOnLayer = 0;
+                            
+                            // The circumfrence of the circle divided by (the radius of our units * unit spacing offset).
+                            maxUnitsOnLayer = Mathf.FloorToInt(2 * Mathf.PI * circleRadius / (unit.AgentRadius * 2));
+                            // 2 * Mathf.PI is the radians of a full circle, then divide by max units to get the radial offset.
+                            // TODO: Units on the last layer are not spaced evenly. This formula assumes we'll always have the max number
+                            // on each layer. We could space them out better if we could predict how many units will be on the last layer.
+                            radialOffset = 2 * Mathf.PI / maxUnitsOnLayer;
+                        }
+                    }
+
+
+
+                    //foreach(ISelectable selectable in selectedUnits)
+                    //{
+                        //if(selectable is IMoveable moveable)
+                        //{
+                            //moveable.MoveTo(hit.point);
+                        //}
+                    //}
                 }
             }
         }
