@@ -16,8 +16,9 @@ namespace RTS.Units
             agent = GetComponent<NavMeshAgent>();
         }
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             Bus<UnitSpawnedEvent>.Raise(new UnitSpawnedEvent(this));
         }
 

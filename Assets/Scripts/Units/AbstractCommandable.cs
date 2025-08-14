@@ -7,8 +7,25 @@ namespace RTS.Units
 {
     public abstract class AbstractCommandable : MonoBehaviour, ISelectable
     {
+        [field: SerializeField] public int MaxHealth { get; private set; }
+        [field: SerializeField] public int CurrentHealth { get; private set; }
+        
+        [SerializeField] private UnitSO UnitSO;
         [SerializeField] private DecalProjector decalProjector;
-        [field: SerializeField] public int Health { get; private set; }
+
+        // Setting properties from the SO is best done in Start.
+        protected virtual void Start()
+        {
+            if(UnitSO != null)
+            {
+                CurrentHealth = UnitSO.Health;
+                MaxHealth = UnitSO.Health;
+            }
+            else
+            {
+                Debug.LogWarning("UnitSO is not assigned in " + gameObject.name);
+            }
+        }
 
         public void Deselect()
         {
