@@ -129,7 +129,7 @@ NavMeshAgent:
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 720
-  m_StoppingDistance: 1.5
+  m_StoppingDistance: 1
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
@@ -151,6 +151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <MaxHealth>k__BackingField: 0
   <CurrentHealth>k__BackingField: 0
+  <AvailableCommands>k__BackingField:
+  - {fileID: 11400000, guid: 02d7b32c4b0890f46a299e8081fbc192, type: 2}
   UnitSO: {fileID: 11400000, guid: ba1db0d2fe402294fb485bac87fe63d4, type: 2}
   decalProjector: {fileID: 7312242055242045686}
 --- !u!136 &445423763944725040
