@@ -1,3 +1,4 @@
+using RTS.Commands;
 using RTS.EventBus;
 using RTS.Events;
 using RTS.Units;
@@ -191,40 +192,38 @@ namespace RTS.Player
 
                     foreach(AbstractUnit unit in abstractUnits)
                     {
-                        // Find where the unit should be on its layer of the concentric circles.
-                        Vector3 targetPosition = new(
-                            hit.point.x + circleRadius * Mathf.Cos(radialOffset * unitsOnLayer),
-                            hit.point.y,
-                            hit.point.z + circleRadius * Mathf.Sin(radialOffset * unitsOnLayer)
-                        );
-
-                        unit.MoveTo(targetPosition);
-                        unitsOnLayer++;
-
-                        if(unitsOnLayer > maxUnitsOnLayer)
+                        foreach(ICommand command in unit.AvailableCommands)
                         {
-                            // Once we fill up a layer, calculate the next layer's radius and reset the count.
-                            circleRadius += unit.AgentRadius * 3.5f;// TODO: Make this layer spacing offset a variable.
-                            unitsOnLayer = 0;
-                            
-                            // The circumfrence of the circle divided by (the radius of our units * unit spacing offset).
-                            maxUnitsOnLayer = Mathf.FloorToInt(2 * Mathf.PI * circleRadius / (unit.AgentRadius * 2));
-                            // 2 * Mathf.PI is the radians of a full circle, then divide by max units to get the radial offset.
-                            // TODO: Units on the last layer are not spaced evenly. This formula assumes we'll always have the max number
-                            // on each layer. We could space them out better if we could predict how many units will be on the last layer.
-                            radialOffset = 2 * Mathf.PI / maxUnitsOnLayer;
+                            if(command.CanHandle(unit, hit))
+                            {
+                                command.Handle(unit, hit);
+                            }
                         }
-                    }
 
+                        //// Find where the unit should be on its layer of the concentric circles.
+                        //Vector3 targetPosition = new(
+                        //    hit.point.x + circleRadius * Mathf.Cos(radialOffset * unitsOnLayer),
+                        //    hit.point.y,
+                        //    hit.point.z + circleRadius * Mathf.Sin(radialOffset * unitsOnLayer)
+                        //);
 
+                        //unit.MoveTo(targetPosition);
+                        //unitsOnLayer++;
 
-                    //foreach(ISelectable selectable in selectedUnits)
-                    //{
-                        //if(selectable is IMoveable moveable)
+                        //if(unitsOnLayer > maxUnitsOnLayer)
                         //{
-                            //moveable.MoveTo(hit.point);
+                        //    // Once we fill up a layer, calculate the next layer's radius and reset the count.
+                        //    circleRadius += unit.AgentRadius * 3.5f;// TODO: Make this layer spacing offset a variable.
+                        //    unitsOnLayer = 0;
+                            
+                        //    // The circumfrence of the circle divided by (the radius of our units * unit spacing offset).
+                        //    maxUnitsOnLayer = Mathf.FloorToInt(2 * Mathf.PI * circleRadius / (unit.AgentRadius * 2));
+                        //    // 2 * Mathf.PI is the radians of a full circle, then divide by max units to get the radial offset.
+                        //    // TODO: Units on the last layer are not spaced evenly. This formula assumes we'll always have the max number
+                        //    // on each layer. We could space them out better if we could predict how many units will be on the last layer.
+                        //    radialOffset = 2 * Mathf.PI / maxUnitsOnLayer;
                         //}
-                    //}
+                    }
                 }
             }
         }
