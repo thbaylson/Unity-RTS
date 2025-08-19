@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RTS.Commands
 {
+    // These objects may be created and destroyed frequently. Making them structs will create less garbage.
     public struct CommandContext
     {
         public AbstractCommandable Commandable { get; private set; }

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RTS.Commands
 {
+    // Why make this a ScriptableObject? Because it doesn't need to be a MonoBehaviour but we still want to see it in the inspector?
     [CreateAssetMenu(fileName = "Move Action", menuName = "AI/Actions/Move", order = 100)]
     public class MoveCommand : ActionBase
     {
