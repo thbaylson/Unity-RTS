@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace RTS.UI
 {
@@ -18,10 +19,15 @@ namespace RTS.UI
         {
             Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
             Bus<UnitDeselectedEvent>.OnEvent += HandleUnitDeselected;
+        }
 
-            foreach(UIActionButton button in actionButtons)
+        private void Start()
+        {
+            foreach (UIActionButton button in actionButtons)
             {
-                button.SetIcon(null);
+                // This used to be in Awake, but that creates a race condition. It's good practice for components to setup themselves in
+                // Awake and then setup dependencies in Start.
+                button.Disable();
             }
         }
 
@@ -66,13 +72,18 @@ namespace RTS.UI
                 // This stems from how they override the == operator and how they do null checks.
                 if (actionForSlot != null)
                 {
-                    actionButtons[i].SetIcon(actionForSlot.Icon);
+                    actionButtons[i].EnableFor(actionForSlot, HandleButtonClicked(actionForSlot));
                 }
                 else
                 {
-                    actionButtons[i].SetIcon(null);
+                    actionButtons[i].Disable();
                 }
             }
+        }
+
+        private UnityAction HandleButtonClicked(ActionBase action)
+        {
+            return () => Bus<ActionSelectedEvent>.Raise(new ActionSelectedEvent(action));
         }
     }
 }

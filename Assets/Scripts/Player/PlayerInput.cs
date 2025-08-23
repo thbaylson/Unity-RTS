@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace RTS.Player
@@ -38,6 +39,9 @@ namespace RTS.Player
         // This is the actual list of selected units that we will use for actions, eg: movement.
         private List<ISelectable> selectedUnits = new(12);
 
+        private ActionBase activeAction;
+        private bool wasMouseDownOnUI;
+
         private void Awake()
         {
             if (!cinemachineCamera.TryGetComponent(out cinemachineFollow))
@@ -52,6 +56,9 @@ namespace RTS.Player
             Bus<UnitSpawnedEvent>.OnEvent += HandleUnitSpawned;
             Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
             Bus<UnitDeselectedEvent>.OnEvent += HandleUnitDeselected;
+
+            // UIActionButtons have their onClick listeners set to Raise an ActionSelectedEvent by ActionsUI.
+            Bus<ActionSelectedEvent>.OnEvent += HandleActionSelected;
         }
 
         // Always unsubscribe from events to prevent memory leaks.
@@ -60,11 +67,14 @@ namespace RTS.Player
             Bus<UnitDeselectedEvent>.OnEvent -= HandleUnitDeselected;
             Bus<UnitSelectedEvent>.OnEvent -= HandleUnitSelected;
             Bus<UnitSpawnedEvent>.OnEvent -= HandleUnitSpawned;
+            
+            Bus<ActionSelectedEvent>.OnEvent -= HandleActionSelected;
         }
 
         private void HandleUnitSpawned(UnitSpawnedEvent evt) => aliveUnits.Add(evt.Unit);
         private void HandleUnitSelected(UnitSelectedEvent evt) => selectedUnits.Add(evt.Unit);
         private void HandleUnitDeselected(UnitDeselectedEvent evt) => selectedUnits.Remove(evt.Unit);
+        private void HandleActionSelected(ActionSelectedEvent evt) => activeAction = evt.Action;
 
         void Update()
         {
@@ -102,10 +112,14 @@ namespace RTS.Player
             dragSelectBox.gameObject.SetActive(true);
             startingMousePosition = Mouse.current.position.ReadValue();
             addedUnits.Clear();
+
+            wasMouseDownOnUI = EventSystem.current.IsPointerOverGameObject();
         }
 
         private void HandleMouseDrag()
         {
+            if (activeAction != null || wasMouseDownOnUI) return;
+
             // This Bounds object was calculated using the mouse position, so it'll be in screen space.
             Bounds selectionBoxBounds = ResizeSelectionBox();
             foreach (AbstractUnit unit in aliveUnits)
@@ -120,8 +134,9 @@ namespace RTS.Player
 
         private void HandleMouseUp()
         {
-            // This enables shift-clicking to select multiple units.
-            if (!Keyboard.current.shiftKey.isPressed)
+            // If the active action is not null, then we probably want to perform that action, so don't clear the selected
+            // units list. The second part enables shift-clicking to select multiple units.
+            if (activeAction == null && !Keyboard.current.shiftKey.isPressed)
             {
                 // Deselect units that are not in the drag box.
                 DeselectAllUnits();
@@ -195,10 +210,25 @@ namespace RTS.Player
 
             Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
 
-            if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
+            if (activeAction == null
+                && Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, selectableUnitsLayers)
                 && hit.collider.TryGetComponent(out ISelectable selectable))
             {
                 selectable.Select();
+            }
+            else if (activeAction != null
+                && !EventSystem.current.IsPointerOverGameObject()
+                && Physics.Raycast(cameraRay, out hit, float.MaxValue, floorLayers))
+            {
+                int unitIndex = 0;
+                foreach (AbstractUnit unit in selectedUnits.Where(x => x is AbstractUnit))
+                {
+                    CommandContext ctx = new CommandContext(unit, hit, unitIndex++);
+                    // The CanHandle method is being checked... somewhere else.
+                    activeAction.Handle(ctx);
+                }
+
+                activeAction = null;
             }
         }
 
