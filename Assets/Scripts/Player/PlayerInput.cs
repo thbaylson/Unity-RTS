@@ -74,7 +74,17 @@ namespace RTS.Player
         private void HandleUnitSpawned(UnitSpawnedEvent evt) => aliveUnits.Add(evt.Unit);
         private void HandleUnitSelected(UnitSelectedEvent evt) => selectedUnits.Add(evt.Unit);
         private void HandleUnitDeselected(UnitDeselectedEvent evt) => selectedUnits.Remove(evt.Unit);
-        private void HandleActionSelected(ActionSelectedEvent evt) => activeAction = evt.Action;
+        private void HandleActionSelected(ActionSelectedEvent evt)
+        {
+            activeAction = evt.Action;
+            // If the action doesn't require a click to activate, then it can be activated immediately.
+            if (!activeAction.RequiresClickToActivate)
+            {
+                // We're assuming that if the action doesn't require a click to activate, then we don't need a RaycastHit.
+                // I kinda hate that we're sending useless data here.
+                ActivateAction(new());
+            }
+        }
 
         void Update()
         {
@@ -220,16 +230,21 @@ namespace RTS.Player
                 && !EventSystem.current.IsPointerOverGameObject()
                 && Physics.Raycast(cameraRay, out hit, float.MaxValue, floorLayers))
             {
-                int unitIndex = 0;
-                foreach (AbstractUnit unit in selectedUnits.Where(x => x is AbstractUnit))
-                {
-                    CommandContext ctx = new CommandContext(unit, hit, unitIndex++);
-                    // The CanHandle method is being checked... somewhere else.
-                    activeAction.Handle(ctx);
-                }
-
-                activeAction = null;
+                ActivateAction(hit);
             }
+        }
+
+        private void ActivateAction(RaycastHit hit)
+        {
+            int unitIndex = 0;
+            foreach (AbstractCommandable unit in selectedUnits.Where(x => x is AbstractCommandable))
+            {
+                CommandContext ctx = new CommandContext(unit, hit, unitIndex++);
+                // The CanHandle method is being checked... somewhere else.
+                activeAction.Handle(ctx);
+            }
+
+            activeAction = null;
         }
 
         private void HandlePanning()
