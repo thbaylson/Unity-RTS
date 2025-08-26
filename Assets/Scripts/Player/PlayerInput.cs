@@ -145,8 +145,9 @@ namespace RTS.Player
         private void HandleMouseUp()
         {
             // If the active action is not null, then we probably want to perform that action, so don't clear the selected
-            // units list. The second part enables shift-clicking to select multiple units.
-            if (activeAction == null && !Keyboard.current.shiftKey.isPressed)
+            // units list. The second part enables shift-clicking to select multiple units. The final part prevents deselecting
+            // if we clicked on the UI.
+            if (activeAction == null && !Keyboard.current.shiftKey.isPressed && !wasMouseDownOnUI)
             {
                 // Deselect units that are not in the drag box.
                 DeselectAllUnits();
