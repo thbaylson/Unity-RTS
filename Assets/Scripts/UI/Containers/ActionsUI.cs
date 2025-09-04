@@ -1,61 +1,33 @@
 using RTS.Commands;
 using RTS.EventBus;
 using RTS.Events;
+using RTS.UI.Components;
 using RTS.Units;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace RTS.UI
+namespace RTS.UI.Containers
 {
-    public class ActionsUI : MonoBehaviour
+    public class ActionsUI : MonoBehaviour, IUIElement<HashSet<AbstractCommandable>>
     {
         [SerializeField] private UIActionButton[] actionButtons;
-        private HashSet<AbstractCommandable> selectedUnits = new(12);
 
-        private void Awake()
+        public void EnableFor(HashSet<AbstractCommandable> context)
         {
-            Bus<UnitSelectedEvent>.OnEvent += HandleUnitSelected;
-            Bus<UnitDeselectedEvent>.OnEvent += HandleUnitDeselected;
+            RefreshButtons(context);
         }
 
-        private void Start()
+        public void Disable()
         {
             foreach (UIActionButton button in actionButtons)
             {
-                // This used to be in Awake, but that creates a race condition. It's good practice for components to setup themselves in
-                // Awake and then setup dependencies in Start.
                 button.Disable();
             }
         }
 
-        private void OnDestroy()
-        {
-            Bus<UnitDeselectedEvent>.OnEvent -= HandleUnitDeselected;
-            Bus<UnitSelectedEvent>.OnEvent -= HandleUnitSelected;
-        }
-
-        private void HandleUnitSelected(UnitSelectedEvent evt)
-        {
-            if(evt.Unit is AbstractCommandable commandable)
-            {
-                selectedUnits.Add(commandable);
-                RefreshButtons();
-            }
-        }
-
-        private void HandleUnitDeselected(UnitDeselectedEvent evt)
-        {
-            if(evt.Unit is AbstractCommandable commandable)
-            {
-                selectedUnits.Remove(commandable);
-                RefreshButtons();
-            }
-        }
-
-        private void RefreshButtons()
+        private void RefreshButtons(HashSet<AbstractCommandable> selectedUnits)
         {
             HashSet<ActionBase> availableCommands = new(9);
             foreach (AbstractCommandable commandable in selectedUnits)
