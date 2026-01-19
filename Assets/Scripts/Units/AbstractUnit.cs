@@ -17,12 +17,24 @@ namespace RTS.Units
         {
             navAgent = GetComponent<NavMeshAgent>();
             graphAgent = GetComponent<BehaviorGraphAgent>();
+            if (graphAgent.Graph == null)
+            {
+                // We require the BehaviorGraphAgent component, but that doesn't guarantee that a Behavior Graph asset is assigned.
+                Debug.LogError($"Behavior Graph property not found on object: {transform.name}.");
+                return;
+            }
+
+            // This prevents hand-placed objects from navigating to the origin on game start.
+            MoveTo(transform.position);
         }
 
         protected override void Start()
         {
             base.Start();
             Bus<UnitSpawnedEvent>.Raise(new UnitSpawnedEvent(this));
+
+            // This prevents runtime objects from navigating to the origin on spawn.
+            MoveTo(transform.position);
         }
 
         public void MoveTo(Vector3 position)
