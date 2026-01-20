@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4583745518494351312}
   - component: {fileID: 8177309903621710089}
   - component: {fileID: 4605093976554150820}
+  - component: {fileID: 8188322834490786616}
   m_Layer: 0
   m_Name: Minerals
   m_TagString: Untagged
@@ -71,6 +72,21 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: -0.5, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &8188322834490786616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2470480825251639189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5243750797fe449aaff708942bdf8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <Supply>k__BackingField: {fileID: 11400000, guid: 0418e035d0b73b84bae78b8d499303ab, type: 2}
+  <Amount>k__BackingField: 0
+  <IsBusy>k__BackingField: 0
 --- !u!1001 &5343783336325319574
 PrefabInstance:
   m_ObjectHideFlags: 0
