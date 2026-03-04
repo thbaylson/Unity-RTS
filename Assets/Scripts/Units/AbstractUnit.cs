@@ -24,22 +24,27 @@ namespace RTS.Units
                 return;
             }
 
-            // This prevents hand-placed objects from navigating to the origin on game start.
-            MoveTo(transform.position);
+            graphAgent.SetVariableValue("Command", UnitCommands.Stop);
         }
 
         protected override void Start()
         {
             base.Start();
             Bus<UnitSpawnedEvent>.Raise(new UnitSpawnedEvent(this));
-
-            // This prevents runtime objects from navigating to the origin on spawn.
-            MoveTo(transform.position);
         }
 
         public void MoveTo(Vector3 position)
         {
             graphAgent.SetVariableValue("TargetLocation", position);
+
+            // Note: Changing the Command triggers an abort. We should update whatever data the next 
+            // command needs before we switch to it, otherwise we might run into issues with the previous command's data still hanging around.
+            graphAgent.SetVariableValue("Command", UnitCommands.Move);
+        }
+
+        public void Stop()
+        {
+            graphAgent.SetVariableValue("Command", UnitCommands.Stop);
         }
     }
 }
