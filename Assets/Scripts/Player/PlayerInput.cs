@@ -19,6 +19,7 @@ namespace RTS.Player
         [SerializeField] private new Camera camera;
         [SerializeField] private CameraConfig cameraConfig;
         [SerializeField] private LayerMask selectableUnitsLayers;
+        [SerializeField] private LayerMask interactableLayers;
         [SerializeField] private LayerMask floorLayers;
         [SerializeField] private RectTransform dragSelectBox;
 
@@ -196,7 +197,7 @@ namespace RTS.Player
             if (Mouse.current.rightButton.wasReleasedThisFrame)
             {
                 Ray cameraRay = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
-                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, floorLayers))
+                if (Physics.Raycast(cameraRay, out RaycastHit hit, float.MaxValue, floorLayers | interactableLayers))
                 {
                     int unitIndex = 0;
                     foreach(AbstractUnit unit in selectedUnits.Where(x => x is AbstractUnit))
@@ -229,7 +230,7 @@ namespace RTS.Player
             }
             else if (activeAction != null
                 && !EventSystem.current.IsPointerOverGameObject()
-                && Physics.Raycast(cameraRay, out hit, float.MaxValue, floorLayers))
+                && Physics.Raycast(cameraRay, out hit, float.MaxValue, floorLayers | interactableLayers))
             {
                 ActivateAction(hit);
             }
@@ -241,8 +242,7 @@ namespace RTS.Player
             foreach (AbstractCommandable unit in selectedUnits.Where(x => x is AbstractCommandable))
             {
                 CommandContext ctx = new CommandContext(unit, hit, unitIndex++);
-                // The CanHandle method is being checked... somewhere else.
-                activeAction.Handle(ctx);
+                if (activeAction.CanHandle(ctx)) activeAction.Handle(ctx);
             }
 
             activeAction = null;

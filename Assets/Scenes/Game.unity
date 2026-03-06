@@ -4502,6 +4502,9 @@ MonoBehaviour:
   selectableUnitsLayers:
     serializedVersion: 2
     m_Bits: 192
+  interactableLayers:
+    serializedVersion: 2
+    m_Bits: 704
   floorLayers:
     serializedVersion: 2
     m_Bits: 256

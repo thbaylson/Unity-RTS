@@ -10,8 +10,8 @@ namespace RTS.Units
     public abstract class AbstractUnit : AbstractCommandable, IMoveable
     {
         public float AgentRadius => navAgent.radius;
+        protected BehaviorGraphAgent graphAgent;
         private NavMeshAgent navAgent;
-        private BehaviorGraphAgent graphAgent;
 
         private void Awake()
         {
