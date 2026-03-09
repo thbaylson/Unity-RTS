@@ -12,7 +12,7 @@ namespace RTS.Units
         [field: SerializeField] public int CurrentHealth { get; private set; }
         [field: SerializeField] public ActionBase[] AvailableCommands { get; private set; }
 
-        [SerializeField] private UnitSO UnitSO;
+        [field: SerializeField] public UnitSO UnitSO { get; private set; }
         [SerializeField] private DecalProjector decalProjector;
 
         // Setting properties from the SO is best done in Start.
