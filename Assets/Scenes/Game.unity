@@ -4494,7 +4494,7 @@ MonoBehaviour:
   cameraConfig:
     <KeyboardPanSpeed>k__BackingField: 15
     <RotationSpeed>k__BackingField: 1
-    <EnableEdgePan>k__BackingField: 1
+    <EnableEdgePan>k__BackingField: 0
     <EdgePanSize>k__BackingField: 50
     <MousePanSpeed>k__BackingField: 5
     <ZoomSpeed>k__BackingField: 1
@@ -29118,7 +29118,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6018277380246554126, guid: 43943267dde60fe4a88cf5bd885c00e3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 14.29
+      value: 15.34
       objectReference: {fileID: 0}
     - target: {fileID: 6018277380246554126, guid: 43943267dde60fe4a88cf5bd885c00e3, type: 3}
       propertyPath: m_LocalPosition.y
@@ -29126,7 +29126,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6018277380246554126, guid: 43943267dde60fe4a88cf5bd885c00e3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -49.509308
+      value: -57.42
       objectReference: {fileID: 0}
     - target: {fileID: 6018277380246554126, guid: 43943267dde60fe4a88cf5bd885c00e3, type: 3}
       propertyPath: m_LocalRotation.w
