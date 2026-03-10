@@ -6,7 +6,7 @@ namespace RTS.Units
     {
         public void Gather(GatherableSupply supply)
         {
-            graphAgent.SetVariableValue("TargetLocation", supply.transform.position);
+            graphAgent.SetVariableValue("TargetGameObject", supply.gameObject);
             graphAgent.SetVariableValue("Supply", supply);
 
             graphAgent.SetVariableValue("Command", UnitCommands.Gather);

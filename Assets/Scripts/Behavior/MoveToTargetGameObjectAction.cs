@@ -20,9 +20,13 @@ namespace RTS.Behavior
         {
             if (!Agent.Value.TryGetComponent(out navAgent)) return Status.Failure;
 
-            Vector3 targetPos = TargetGameObject.Value.transform.position;
+            // If the target has a collider, then find the closest point on the collider to the navAgent. Otherwise, just use the target's position.
+            Vector3 targetPos = TargetGameObject.Value.TryGetComponent(out Collider targetCollider)
+                ? targetCollider.ClosestPoint(navAgent.transform.position) 
+                : TargetGameObject.Value.transform.position;
+            
             if (Vector3.Distance(navAgent.transform.position, targetPos) <= navAgent.stoppingDistance) return Status.Success;
-
+            
             navAgent.SetDestination(targetPos);
             return Status.Running;
         }
