@@ -8,5 +8,6 @@ namespace RTS.Environment
 
         public bool BeginGather();
         public int EndGather();
+        public void AbortGather();
     }
 }

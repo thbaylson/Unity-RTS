@@ -1,7 +1,6 @@
 using RTS.Environment;
 using RTS.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Unity.Behavior;
 using Unity.Properties;
@@ -20,15 +19,14 @@ namespace RTS.Behavior
         [SerializeReference] public BlackboardVariable<float> SearchRadius = new(7);
 
         private NavMeshAgent navAgent;
-        private LayerMask suppliesLayerMask;
+        private LayerMask suppliesLayerMask = LayerMask.GetMask("Supplies");
+        private SupplySO supplySO;
 
         protected override Status OnStart()
         {
-            if (!Agent.Value.TryGetComponent(out navAgent)) return Status.Failure;
+            if (!HasValidInputs()) return Status.Failure;
 
-            suppliesLayerMask = LayerMask.GetMask("Supplies");
             navAgent.SetDestination(GetAgentDestination());
-
             return Status.Running;
         }
 
@@ -39,22 +37,13 @@ namespace RTS.Behavior
                 return Status.Running;
             }
 
-            if(!Supply.Value.IsBusy && Supply.Value.Amount > 0)
+            if (Supply.Value != null && !Supply.Value.IsBusy && Supply.Value.Amount > 0)
             {
                 return Status.Success;
             }
 
-            Collider[] colliders = Physics.OverlapSphere(
-                navAgent.transform.position, 
-                SearchRadius.Value, 
-                suppliesLayerMask
-            ).Where(collider => 
-                collider.TryGetComponent(out GatherableSupply supply)
-                && !supply.IsBusy
-                && supply.Supply.Equals(Supply.Value.Supply)
-            ).ToArray();
-
-            if(colliders.Length > 0)
+            Collider[] colliders = FindNearbyNotBusyColliders();
+            if (colliders.Length > 0)
             {
                 Array.Sort(colliders, new ClosestColliderComparer(navAgent.transform.position));
                 Supply.Value = colliders[0].GetComponent<GatherableSupply>();
@@ -63,6 +52,44 @@ namespace RTS.Behavior
             }
 
             return Status.Failure;
+        }
+
+        private bool HasValidInputs()
+        {
+            if (!Agent.Value.TryGetComponent(out navAgent) || (Supply.Value == null && supplySO == null)) return false;
+
+            if (Supply.Value != null)
+            {
+                supplySO = Supply.Value.Supply;
+            }
+            else
+            {
+                Collider[] colliders = FindNearbyNotBusyColliders();
+                if (colliders.Length > 0)
+                {
+                    Array.Sort(colliders, new ClosestColliderComparer(navAgent.transform.position));
+                    Supply.Value = colliders[0].GetComponent<GatherableSupply>();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private Collider[] FindNearbyNotBusyColliders()
+        {
+            return Physics.OverlapSphere(
+                navAgent.transform.position,
+                SearchRadius.Value,
+                suppliesLayerMask
+            ).Where(collider =>
+                collider.TryGetComponent(out GatherableSupply supply)
+                && !supply.IsBusy
+                && supply.Supply.Equals(supplySO)
+            ).ToArray();
         }
 
         private Vector3 GetAgentDestination()

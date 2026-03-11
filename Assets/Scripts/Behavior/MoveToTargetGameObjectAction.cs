@@ -18,7 +18,7 @@ namespace RTS.Behavior
 
         protected override Status OnStart()
         {
-            if (!Agent.Value.TryGetComponent(out navAgent)) return Status.Failure;
+            if (!Agent.Value.TryGetComponent(out navAgent) || TargetGameObject.Value == null) return Status.Failure;
 
             // If the target has a collider, then find the closest point on the collider to the navAgent. Otherwise, just use the target's position.
             Vector3 targetPos = TargetGameObject.Value.TryGetComponent(out Collider targetCollider)
