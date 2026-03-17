@@ -1,9 +1,10 @@
+using RTS.Utilities;
 using System;
 using Unity.Behavior;
-using UnityEngine;
-using Action = Unity.Behavior.Action;
 using Unity.Properties;
+using UnityEngine;
 using UnityEngine.AI;
+using Action = Unity.Behavior.Action;
 
 namespace RTS.Behavior
 {
@@ -15,8 +16,13 @@ namespace RTS.Behavior
 
         protected override Status OnStart()
         {
-            if(Agent.Value.TryGetComponent(out NavMeshAgent agent))
+            if (Agent.Value.TryGetComponent(out NavMeshAgent agent))
             {
+                if (agent.TryGetComponent(out Animator animator))
+                {
+                    animator.SetFloat(AnimationConstants.SPEED, 0f);
+                }
+
                 agent.ResetPath();
                 return Status.Success;
             }

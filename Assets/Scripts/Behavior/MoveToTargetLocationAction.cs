@@ -4,6 +4,7 @@ using UnityEngine;
 using Action = Unity.Behavior.Action;
 using Unity.Properties;
 using UnityEngine.AI;
+using RTS.Utilities;
 
 namespace RTS.Behavior
 {
@@ -15,6 +16,7 @@ namespace RTS.Behavior
         [SerializeReference] public BlackboardVariable<Vector3> TargetLocation;
 
         private NavMeshAgent navAgent;
+        private Animator animator;
 
         protected override Status OnStart()
         {
@@ -22,6 +24,8 @@ namespace RTS.Behavior
             {
                 return Status.Failure;
             }
+
+            Agent.Value.TryGetComponent(out animator);
 
             if (Vector3.Distance(navAgent.transform.position, TargetLocation.Value) <= navAgent.stoppingDistance)
             {
@@ -35,6 +39,11 @@ namespace RTS.Behavior
 
         protected override Status OnUpdate()
         {
+            if (animator != null)
+            {
+                animator.SetFloat(AnimationConstants.SPEED, navAgent.velocity.magnitude);
+            }
+
             // remainingDistance will always be 0 while pathPending is true.
             if (!navAgent.pathPending && navAgent.remainingDistance <= navAgent.stoppingDistance)
             {
@@ -45,6 +54,12 @@ namespace RTS.Behavior
         }
 
         // OnEnd is called when we move away from this node, regardless of success or failure. It's safe to remove it if it's not needed.
-        //protected override void OnEnd() { }
+        protected override void OnEnd()
+        {
+            if (animator != null)
+            {
+                animator.SetFloat(AnimationConstants.SPEED, 0f);
+            }
+        }
     }
 }

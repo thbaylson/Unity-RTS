@@ -19,19 +19,28 @@ namespace RTS.Behavior
         [SerializeReference] public BlackboardVariable<float> SearchRadius = new(7);
 
         private NavMeshAgent navAgent;
-        private LayerMask suppliesLayerMask = LayerMask.GetMask("Supplies");
+        private Animator animator;
+        private LayerMask suppliesLayerMask;
         private SupplySO supplySO;
 
         protected override Status OnStart()
         {
             if (!HasValidInputs()) return Status.Failure;
 
+            Agent.Value.TryGetComponent(out animator);
+
+            suppliesLayerMask = LayerMask.GetMask("Supplies");
             navAgent.SetDestination(GetAgentDestination());
             return Status.Running;
         }
 
         protected override Status OnUpdate()
         {
+            if (animator != null)
+            {
+                animator.SetFloat(AnimationConstants.SPEED, navAgent.velocity.magnitude);
+            }
+
             if (navAgent.pathPending || navAgent.remainingDistance > navAgent.stoppingDistance)
             {
                 return Status.Running;
@@ -52,6 +61,14 @@ namespace RTS.Behavior
             }
 
             return Status.Failure;
+        }
+
+        protected override void OnEnd()
+        {
+            if (animator != null)
+            {
+                animator.SetFloat(AnimationConstants.SPEED, 0f);
+            }
         }
 
         private bool HasValidInputs()
